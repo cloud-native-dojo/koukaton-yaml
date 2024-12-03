@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: front-end
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-view-flask
+  namespace: front-end
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-view-flask
+  template:
+    metadata:
+      labels:
+        app: user-view-flask
+    spec:
+      containers:
+        - name: user-view-flask
+          image: python:3.9-slim
+          command: ["python3", "app_in_adv_data.py"]
+          workingDir: /app
+          volumeMounts:
+            - name: app-source
+              mountPath: /app
+          ports:
+            - containerPort: 5000
+          env:
+            - name: FLASK_APP
+              value: "app_in_adv_data.py"
+        - name: git-sync
+          image: k8s.gcr.io/git-sync/git-sync:v3.3.2
+          env:
+            - name: GIT_SYNC_REPO
+              value: "https://github.com/cloud-native-dojo/kokaton_on_the_cloud_2024.git"
+            - name: GIT_SYNC_BRANCH
+              value: "user-front-end"
+            - name: GIT_SYNC_DEST
+              value: "/app"
+            - name: GIT_SYNC_DEPTH
+              value: "1"
+          volumeMounts:
+            - name: app-source
+              mountPath: /app
+      volumes:
+        - name: app-source
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-view-flask
+  namespace: front-end
+spec:
+  selector:
+    app: user-view-flask
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: NodePort
+  nodePort: 30500

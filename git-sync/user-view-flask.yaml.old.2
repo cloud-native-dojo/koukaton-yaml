@@ -12,11 +12,10 @@ metadata:
   namespace: front-end
 data:
   GIT_SYNC_REPO: "https://github.com/cloud-native-dojo/kokaton_on_the_cloud_2024.git"
-  GIT_SYNC_BRANCH: "front-end"
+  GIT_SYNC_BRANCH: "user-front-end"
   GIT_SYNC_DEPTH: "1"
   GIT_SYNC_ONE_TIME: "false"
   GIT_SYNC_ROOT: "/app"
-  GIT_SYNC_SKIP_SUBMODULES: "true"
 
 ---
 apiVersion: apps/v1
@@ -75,11 +74,6 @@ spec:
             configMapKeyRef:
               name: git-sync-config
               key: GIT_SYNC_ROOT
-        - name: GIT_SYNC_SKIP_SUBMODULES
-          valueFrom:
-            configMapKeyRef:
-              name: git-sync-config
-              key: GIT_SYNC_SKIP_SUBMODULES
         securityContext:
           runAsUser: 65533
           runAsGroup: 65533
@@ -93,32 +87,8 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          # cn-dojoディレクトリを除外
-          find /app -type d -name "cn_dojo" -exec rm -rf {} +
-          find /app -type d -name "cn-dojo" -exec rm -rf {} +
-
-          # 依存関係とアプリケーションファイルを検索
-          find /app -name requirements.txt
-          find /app -name "app.py" -o -name "main.py"
-          
-          # 最初に見つかったrequirements.txtとPythonファイルを使用
-          REQUIREMENTS=$(find /app -name requirements.txt | head -n 1)
-          PYTHON_APP=$(find /app -name "app.py" -o -name "main.py" | head -n 1)
-          
-          if [ -n "$REQUIREMENTS" ]; then
-            echo "Installing requirements from $REQUIREMENTS"
-            pip3 install -r "$REQUIREMENTS"
-          else
-            echo "No requirements.txt found"
-          fi
-          
-          if [ -n "$PYTHON_APP" ]; then
-            echo "Starting application: $PYTHON_APP"
-            python3 "$PYTHON_APP"
-          else
-            echo "No Python application file found"
-            ls -R /app
-          fi
+          pip3 install -r requirements.txt
+          python3 app.py
         ports:
         - containerPort: 5000
         env:
