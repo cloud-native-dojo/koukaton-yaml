@@ -1,0 +1,145 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: git-sync-config-priority
+  namespace: front-end
+data:
+  GIT_SYNC_REPO: "https://github.com/cloud-native-dojo/kokaton_on_the_cloud_2024.git"
+  GIT_SYNC_BRANCH: "prority"
+  GIT_SYNC_DEPTH: "1"
+  GIT_SYNC_ONE_TIME: "false"
+  GIT_SYNC_ROOT: "/app"
+  GIT_SYNC_SKIP_SUBMODULES: "true"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prority-view-flask
+  namespace: front-end
+  labels:
+    app: prority-view-flask
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prority-view-flask
+  template:
+    metadata:
+      labels:
+        app: prority-view-flask
+    spec:
+      volumes:
+      - name: app-source
+        emptyDir: {}
+      - name: git-sync
+        emptyDir: {}
+      containers:
+      - name: git-sync
+        image: k8s.gcr.io/git-sync/git-sync:v3.6.1
+        volumeMounts:
+        - name: app-source
+          mountPath: /app
+        - name: git-sync
+          mountPath: /tmp/git-sync
+        env:
+        - name: GIT_SYNC_REPO
+          valueFrom:
+            configMapKeyRef:
+              name: git-sync-config-priority
+              key: GIT_SYNC_REPO
+        - name: GIT_SYNC_BRANCH
+          valueFrom:
+            configMapKeyRef:
+              name: git-sync-config-priority
+              key: GIT_SYNC_BRANCH
+        - name: GIT_SYNC_DEPTH
+          valueFrom:
+            configMapKeyRef:
+              name: git-sync-config-priority
+              key: GIT_SYNC_DEPTH
+        - name: GIT_SYNC_ONE_TIME
+          valueFrom:
+            configMapKeyRef:
+              name: git-sync-config-priority
+              key: GIT_SYNC_ONE_TIME
+        - name: GIT_SYNC_ROOT
+          valueFrom:
+            configMapKeyRef:
+              name: git-sync-config-priority
+              key: GIT_SYNC_ROOT
+        - name: GIT_SYNC_SKIP_SUBMODULES
+          valueFrom:
+            configMapKeyRef:
+              name: git-sync-config-priority
+              key: GIT_SYNC_SKIP_SUBMODULES
+        securityContext:
+          runAsUser: 65533
+          runAsGroup: 65533
+
+      - name: flask-app
+        image: python:3.9-slim
+        volumeMounts:
+        - name: app-source
+          mountPath: /app
+        workingDir: /app
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          # デバッグ用：ディレクトリ構造の表示
+          echo "Listing directory contents:"
+          find /app -type d
+          
+          # 正確なパスの特定
+          REQUIREMENTS=$(find /app -name requirements.txt | head -n 1)
+          PYTHON_APP=$(find /app -name "app_in_adv_data.py" | head -n 1)
+          FILE_LIST=$(find /app -name "file-list.txt" | head -n 1)
+
+          # パスの表示
+          echo "Requirements path: $REQUIREMENTS"
+          echo "Python app path: $PYTHON_APP"
+          echo "File list path: $FILE_LIST"
+
+          # 仮想環境の作成と有効化
+          python3 -m venv .venv
+          . .venv/bin/activate
+
+          # 必要に応じて、絶対パスを使用するように修正
+          if [ -n "$REQUIREMENTS" ]; then
+            echo "Installing requirements from $REQUIREMENTS"
+            pip3 install -r "$REQUIREMENTS"
+          else
+            echo "No requirements.txt found"
+          fi
+
+          if [ -n "$PYTHON_APP" ]; then
+            # カレントディレクトリを正確なアプリケーションディレクトリに変更
+            cd "$(dirname "$PYTHON_APP")"
+            echo "Starting application from directory: $(pwd)"
+            echo "Starting application: $PYTHON_APP"
+            python3 "$PYTHON_APP"
+          else
+            echo "No Python application file found"
+            ls -R /app
+          fi
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-git-sync-service-priority
+  namespace: front-end
+spec:
+  type: NodePort
+  selector:
+    app: prority-view-flask
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30700
