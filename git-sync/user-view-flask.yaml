@@ -6,7 +6,7 @@ metadata:
   namespace: front-end
 data:
   GIT_SYNC_REPO: "https://github.com/cloud-native-dojo/kokaton_on_the_cloud_2024.git"
-  GIT_SYNC_BRANCH: "user-front-end"
+  GIT_SYNC_BRANCH: "sending"
   GIT_SYNC_DEPTH: "1"
   GIT_SYNC_ONE_TIME: "false"
   GIT_SYNC_ROOT: "/app"
@@ -93,7 +93,7 @@ spec:
           
           # 正確なパスの特定
           REQUIREMENTS=$(find /app -name requirements.txt | head -n 1)
-          PYTHON_APP=$(find /app -name "app_in_adv_data.py" | head -n 1)
+          PYTHON_APP=$(find /app -name "app.py" | head -n 1)
           FILE_LIST=$(find /app -name "file-list.txt" | head -n 1)
 
           # パスの表示
@@ -102,7 +102,7 @@ spec:
           echo "File list path: $FILE_LIST"
 
           # 仮想環境の作成と有効化
-          python3 -m venv .venv
+          # python3 -m venv .venv
           . .venv/bin/activate
 
           # 必要に応じて、絶対パスを使用するように修正
