@@ -7,7 +7,7 @@ clusters:
 contexts:
 - context:
     cluster: default
-    namespace: front-end
+    namespace: nishimura
     user: default
   name: default
 current-context: default
