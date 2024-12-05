@@ -37,7 +37,7 @@ spec:
         emptyDir: {}
       containers:
       - name: git-sync
-        image: k8s.gcr.io/git-sync/git-sync:v3.6.1
+        image: c0a21099/git-sync-custom
         volumeMounts:
         - name: app-source
           mountPath: /app
@@ -90,7 +90,7 @@ spec:
           # デバッグ用：ディレクトリ構造の表示
           echo "Listing directory contents:"
           find /app -type d
-          
+
           # 正確なパスの特定
           REQUIREMENTS=$(find /app -name requirements.txt | head -n 1)
           PYTHON_APP=$(find /app -name "app.py" | head -n 1)
