@@ -79,7 +79,7 @@ spec:
           runAsGroup: 65533
 
       - name: flask-app
-        image: c0a21099/git-sync-custom
+        image: c0a21099/git-sync-custom:latest
         volumeMounts:
         - name: app-source
           mountPath: /app
